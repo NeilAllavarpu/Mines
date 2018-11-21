@@ -1,32 +1,91 @@
-.App {
-  text-align: center;
+.mine {
+    border: 1px solid #000;
+    float: left;
+    height: 25px;
+    margin: 0px;
+    padding: 0;
+    width: 25px;
+    line-height: 25px;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
+body {
+    background-color: beige;
+    text-align: center;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.status {
+    margin-top: 10px;
 }
 
-.App-link {
-  color: #61dafb;
+.row:after {
+    clear: both;
+    content: "";
+    display: table;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.mineNum0 {
+    background-color: #0f0;
+}
+
+.mineNum1 {
+    background-color: #8f0;
+}
+
+.mineNum2 {
+    background-color: #ff0;
+}
+
+.mineNum3 {
+    background-color: #f80;
+}
+
+.mineNum4, .mineNum5, .mineNum6, .mineNum7, .mineNum8 {
+    background-color: #f00;
+}
+
+.hidden {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.mineLoss {
+    animation: isMine 1s ease-in-out infinite alternate;
+}
+
+@keyframes isMine {
+    0% {background-color: #000;}
+    50% {background-color: #f00;}
+    100% {background-color: #000;}
+}
+
+.mineLossClick {
+    animation: isMineClicked 0.5s ease-in-out infinite alternate;
+}
+
+.mineLossAutoClick {
+    animation: isMineClicked 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes isMineClicked {
+    0% {background-color: #00f;}
+    50% {background-color: #f00;}
+    100% {background-color: #00f;}
+}
+
+.win {
+    animation: winner 5s infinite;
+    font-size: 30px;
+}
+
+@keyframes winner {
+    0% {color: #f00}
+    17% {color: #ff0}
+    33% {color: #0f0}
+    50% {color: #0ff}
+    67% {color: #00f}
+    83% {color: #f0f}
+    100% {color: #f00}
+}
+
+label {
+    display: block;
 }
