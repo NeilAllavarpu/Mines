@@ -273,9 +273,12 @@ class App extends Component {
                             </div>
                             {this.state.playing === GAME_IN_PROGRESS &&
                                 <div>
-                                    Progress: {Math.round(
-                                        1000 * (1 - (HEIGHT * WIDTH - revealed) / (HEIGHT * WIDTH))
-                                    ) / 10}%
+                                    Progress:
+                                    <div className="bar">
+                                        <div style={{"width": 100 * (1 - (HEIGHT * WIDTH - revealed) / (HEIGHT * WIDTH)), "height": "100%", "backgroundColor": "green", "borderRadius": 5, "lineHeight": "30px", "color": "lightgreen"}}>{Math.round(
+                                            1000 * (1 - (HEIGHT * WIDTH - revealed) / (HEIGHT * WIDTH))
+                                        ) / 10}%</div>
+                                    </div>
                                 </div>
                             }
                         </div>
@@ -316,12 +319,12 @@ class App extends Component {
 }
 
 /**
- * stuff
-* @param {*} mines e
-* @param {*} x e
-* @param {*} y e
-* @returns {*} stuf
-        */
+ * Reveal all mines near a target mine recursively
+ * @param {Array} mines 2-D array containing the status of all mines
+ * @param {Number} x X-coordiante of the initially revealed mine
+ * @param {Number} y Y-coordiante of the initially revealed mine
+ * @returns {Object} Contains mines, the updated 2-D mines array, and a mine indicating any if tripped, or null if not
+ */
 function revealNear(mines, x, y) {
     let minesToTest = [];
     if (x > 0) {
