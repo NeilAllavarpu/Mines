@@ -238,6 +238,8 @@ class App extends Component {
         this.height = React.createRef();
         // ref to get number of mines from input
         this.numMines = React.createRef();
+        // whether or not there has been a click
+        this.firstClick = true;
         this.state = {
             // to be initialized once settings are input
             "mines": [],
@@ -250,6 +252,30 @@ class App extends Component {
 
     // handler for when a mine is clicked
     handleClick(x, y) {
+        // if this is the first click
+        if (this.firstClick === true) {
+            // generate the mines to ensure a protected first click
+            this.setState(function(prevState) {
+                // generate the desired number of mines
+                for (let i = 0; i < NUM_MINES; ++i) {
+                    // keep picking random X and Y values until we hit a non-mine that isn't the clicked square
+                    let mineX, mineY;
+                    do {
+                        mineX = Math.floor(Math.random() * WIDTH);
+                        mineY = Math.floor(Math.random() * HEIGHT);
+                    } while ((mineX === x && mineY === y) || prevState.mines[mineY][mineX].isMine === true);
+                    // set that square to be a mine
+                    prevState.mines[mineY][mineX].isMine = true;
+                    // for each adjacent square
+                    getMinesToTest(mineX, mineY).forEach(function(coords) {
+                        // increment the amount of nearby mines that it has
+                        ++prevState.mines[coords[1]][coords[0]].minesNear;
+                    });
+                }
+                // click has already happened, don't repeat this
+                this.firstClick = false;
+            });
+        }
         // if the game is going on and the mine isn't marked, we can perform a click
         if (this.state.playing === GAME_IN_PROGRESS && this.state.mines[y][x].state !== MINE_MARKED) {
             // if a mine was clicked
@@ -380,24 +406,8 @@ class App extends Component {
                 });
             }
         }
-        // generate the desired number of mines
-        for (let i = 0; i < NUM_MINES; ++i) {
-            // keep picking random X and Y values until we hit a non-mine
-            let x, y;
-            do {
-                x = Math.floor(Math.random() * WIDTH);
-                y = Math.floor(Math.random() * HEIGHT);
-            } while (mines[y][x].isMine === true);
-            // set that square to be a mine
-            mines[y][x].isMine = true;
-            // for each adjacent square
-            getMinesToTest(x, y).forEach(function(coords) {
-                // increment the amount of nearby mines that it has
-                ++mines[coords[1]][coords[0]].minesNear;
-            });
-        }
         this.setState({
-            // set mines to our generated 2-D array
+            // set mines to our (empty) 2-D array
             "mines": mines,
             // game has begun
             "playing": GAME_IN_PROGRESS,
@@ -410,6 +420,8 @@ class App extends Component {
     restartGame() {
         // no marked squares
         this.markedNum = 0;
+        // no clicks yet
+        this.firstClick = true;
         this.setState({
             // clear mines
             "mines": [],
@@ -420,7 +432,7 @@ class App extends Component {
 
     render() {
         // calculate the percent of all non-mines that are revealed
-        const progress = 100 - (100 * this.validSquaresLeft(this.state.mines) / (HEIGHT * WIDTH - NUM_MINES));
+        const progress = this.firstClick === true ? 0 : 100 - (100 * this.validSquaresLeft(this.state.mines) / (HEIGHT * WIDTH - NUM_MINES));
         return (
             <div>
                 {/* header atop the whole app */}
