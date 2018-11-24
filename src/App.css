@@ -101,3 +101,11 @@ label {
     margin: 2px auto;
     background-color: blue;
 }
+
+.innerBar {
+    height: 100%;
+    background-color: green;
+    border-radius: 5px;
+    line-height: 30px;
+    color: lightgreen;
+}
