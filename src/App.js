@@ -367,14 +367,26 @@ class Board extends Component {
                                 })
                             )),
                         };
+                    } else if (this.validSquaresLeft(temp.mines) === 0) {
+                        // if nothing is left, victory!
+                        this.props.updateState({
+                            "playing": GAME_WIN,
+                        });
+                        return {
+                            "mines": prevState.mines.map((mineRow) => (
+                                // for each square in each row
+                                mineRow.map((mine) => {
+                                    // if it was a mine, mark it (but don't actually make it an X)
+                                    return {
+                                        ...mine,
+                                        "state": mine.isMine === true ? MINE_MARKED : MINE_REVEALED,
+                                    };
+                                })
+                            )),
+                        };
                     } else {
                         // nothing got tripped, continue
-                        // if nothing is left, victory!
-                        if (this.validSquaresLeft(temp.mines) === 0) {
-                            this.props.updateState({
-                                "playing": GAME_WIN,
-                            });
-                        }
+                        // continue play with the revealed mine
                         return {
                             // update the mines
                             "mines": temp.mines,
@@ -387,28 +399,30 @@ class Board extends Component {
 
     // handler for when a mine is right clicked
     handleRightClick(x, y) {
-        // get the mine that was clicked
-        const mine = this.state.mines[y][x];
-        // if it wasn't already revealed
-        if (mine.state !== MINE_REVEALED) {
-            this.setState((prevState) => {
-                // if it was marked
-                if (mine.state === MINE_MARKED) {
-                    // set it to be hidden (unmarked)
-                    prevState.mines[y][x].state = MINE_HIDDEN;
-                    // decrement the number of marked mines
-                    --this.markedNum;
-                } else {
-                    // otherwise set it to be marked
-                    prevState.mines[y][x].state = MINE_MARKED;
-                    // and increment the number of marked mines
-                    ++this.markedNum;
-                }
-                return {
-                    // update the toggled mine
-                    "mines": prevState.mines,
-                };
-            });
+        if (this.props.playing === GAME_IN_PROGRESS) {
+            // get the mine that was clicked
+            const mine = this.state.mines[y][x];
+            // if it wasn't already revealed
+            if (mine.state !== MINE_REVEALED) {
+                this.setState((prevState) => {
+                    // if it was marked
+                    if (mine.state === MINE_MARKED) {
+                        // set it to be hidden (unmarked)
+                        prevState.mines[y][x].state = MINE_HIDDEN;
+                        // decrement the number of marked mines
+                        --this.markedNum;
+                    } else {
+                        // otherwise set it to be marked
+                        prevState.mines[y][x].state = MINE_MARKED;
+                        // and increment the number of marked mines
+                        ++this.markedNum;
+                    }
+                    return {
+                        // update the toggled mine
+                        "mines": prevState.mines,
+                    };
+                });
+            }
         }
     }
 
