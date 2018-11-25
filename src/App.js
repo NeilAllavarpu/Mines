@@ -232,12 +232,6 @@ function Mine(props) {
 class App extends Component {
     constructor(props) {
         super(props);
-        // ref to get width from input
-        this.width = React.createRef();
-        // ref to get height from input
-        this.height = React.createRef();
-        // ref to get number of mines from input
-        this.numMines = React.createRef();
         // whether or not there has been a click
         this.firstClick = true;
         this.state = {
@@ -317,8 +311,10 @@ class App extends Component {
                                 // for each square in each row
                                 mineRow.map((mine) => {
                                     // set the square to be revealed, unless it was properly marked (show the user their correct markings)
+                                    let mineCSS = mine.isMine === false && mine.state === MINE_MARKED ? "falseMark" : "";
                                     return {
                                         ...mine,
+                                        "customClasses": mineCSS,
                                         "state": !(mine.isMine === true && mine.state === MINE_MARKED) ? MINE_REVEALED : MINE_MARKED,
                                     };
                                 })
@@ -382,36 +378,38 @@ class App extends Component {
     }
 
     // handler for when the inputs are finalized
-    handleSubmit() {
+    handleSubmit(event) {
         // set width, height, number of mines based on inputs
-        WIDTH = this.width.value;
-        HEIGHT = this.height.value;
-        NUM_MINES = this.numMines.value;
-        // array to store the generated mines
-        let mines = [];
-        // create HEIGHT inner arrays (rows)
-        for (let i = 0; i < HEIGHT; ++i) {
-            mines.push([]);
-            // create WIDTH mine states per row (columns)
-            for (let j = 0; j < WIDTH; ++j) {
-                mines[i].push({
-                    // should start out hidden
-                    "state": MINE_HIDDEN,
-                    // will be set later
-                    "isMine": false,
-                    // will be set later
-                    "minesNear": 0,
-                    // no custom CSS for mines currently
-                    "customClasses": "",
-                });
+        WIDTH = event.target[0].value;
+        HEIGHT = event.target[1].value;
+        NUM_MINES = event.target[2].value;
+        if (NUM_MINES <= WIDTH * HEIGHT / 2) {
+            // array to store the generated mines
+            let mines = [];
+            // create HEIGHT inner arrays (rows)
+            for (let i = 0; i < HEIGHT; ++i) {
+                mines.push([]);
+                // create WIDTH mine states per row (columns)
+                for (let j = 0; j < WIDTH; ++j) {
+                    mines[i].push({
+                        // should start out hidden
+                        "state": MINE_HIDDEN,
+                        // will be set later
+                        "isMine": false,
+                        // will be set later
+                        "minesNear": 0,
+                        // no custom CSS for mines currently
+                        "customClasses": "",
+                    });
+                }
             }
+            this.setState({
+                // set mines to our (empty) 2-D array
+                "mines": mines,
+                // game has begun
+                "playing": GAME_IN_PROGRESS,
+            });
         }
-        this.setState({
-            // set mines to our (empty) 2-D array
-            "mines": mines,
-            // game has begun
-            "playing": GAME_IN_PROGRESS,
-        });
     }
 
     /**
@@ -435,8 +433,6 @@ class App extends Component {
         const progress = this.firstClick === true ? 0 : 100 - (100 * this.validSquaresLeft(this.state.mines) / (HEIGHT * WIDTH - NUM_MINES));
         return (
             <div>
-                {/* header atop the whole app */}
-                <h1>Minesweeper</h1>
                 {/* are we playing the game? */}
                 {this.state.playing !== GAME_INPUT ?
                     // if so render the play screen
@@ -444,7 +440,11 @@ class App extends Component {
                         {/* timer to show how long the game has been, only runs while the player hasn't won or lost */}
                         <Timer running={this.state.playing === GAME_IN_PROGRESS} />
                         {/* main board, dynamically adjust it to be in the middle of the screen */}
-                        <div className="board" style={{"marginLeft": window.innerWidth / 2 - 12.5 - 12.5 * (WIDTH)}}>
+                        <div
+                            className="board"
+                            style={{
+                                "marginLeft": (window.innerWidth - (WIDTH * 27)) / 2,
+                            }}>
                             {/* generate the board of mines */}
                             {this.state.mines.map((mineRow, rowIndex) => (
                                 // create a row for each row of mines
@@ -499,18 +499,11 @@ class App extends Component {
                             <button onClick={this.restartGame.bind(this)}>Restart</button>}
                     </div> :
                     // waiting on user input, show the form
-                    <form onSubmit={(event) => {
-                        // prevent default redirect on submit
-                        event.preventDefault();
-                        // use the custom handler
-                        this.handleSubmit();
-                    }}>
+                    <form onSubmit={this.handleSubmit.bind(this)}>
                         {/* input for width of board */}
                         <label>Board width <input
                             // make it a numeric input
                             type="number"
-                            // store the ref to this.width
-                            ref={ref => this.width = ref}
                             // need at least 1 wide board
                             min={1}
                             // don't make it too wide or weird wrapping happens
@@ -522,8 +515,6 @@ class App extends Component {
                         <label>Board height <input
                             // make it a numeric input
                             type="number"
-                            // store the ref to this.height
-                            ref={ref => this.height = ref}
                             // need at least 1 tall board
                             min={1}
                             // initially set to whatever the height was
@@ -533,8 +524,6 @@ class App extends Component {
                         <label>Number of mines <input
                             // make it a numeric input
                             type="number"
-                            // store the ref to this.numMines
-                            ref={ref => this.numMines = ref}
                             // need at least 1 mine
                             min={1}
                             // too many mines means the random mine generation could stall, don't allow this
