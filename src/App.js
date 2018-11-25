@@ -1,11 +1,6 @@
 import React, {Component} from "react";
 import "./App.css";
 
-// game settings
-let WIDTH = 30;
-let HEIGHT = 15;
-let NUM_MINES = 75;
-
 // various states of the game
 const GAME_INPUT = -1;
 const GAME_IN_PROGRESS = 0;
@@ -16,142 +11,6 @@ const GAME_WIN = 2;
 const MINE_HIDDEN = 0;
 const MINE_REVEALED = 1;
 const MINE_MARKED = 2;
-
-/**
- * Get all the adjacent coordinates of a specified mine
- * @param {Number} x X-coordinate of the mine
- * @param {Number} y Y-coordinate of the mine
- * @returns {Array} A 2-D array containing adjcanet coordinate pairs
- */
-function getMinesToTest(x, y) {
-    // block comments refer to the position of the mine to add
-    // where the x indicates the location of the specified
-    // and the * indicates the adjacent mine
-
-    // array to store nearby mines
-    let mines = [];
-    // if we aren't on the left edge
-    if (x > 0) {
-        // if we aren't at the top edge
-        if (y > 0) {
-            /*
-            * - -
-            - x -
-            - - -
-            */
-            mines.push([x - 1, y - 1]);
-        }
-        /*
-        - - -
-        * x -
-        - - -
-        */
-        mines.push([x - 1, y]);
-        // if we aren't on the bottom edge
-        if (y < HEIGHT - 1) {
-            /*
-            - - -
-            - x -
-            * - -
-            */
-            mines.push([x - 1, y + 1]);
-        }
-    }
-    // if we aren't at the top edge
-    if (y > 0) {
-        /*
-        - * -
-        - x -
-        - - -
-        */
-        mines.push([x, y - 1]);
-    }
-    // if we aren't on the bottom edge
-    if (y < HEIGHT - 1) {
-        /*
-        - - -
-        - x -
-        - * -
-        */
-        mines.push([x, y + 1]);
-    }
-    // if we aren't on the right edge
-    if (x < WIDTH - 1) {
-        // if we aren't at the top edge
-        if (y > 0) {
-            /*
-            - - *
-            - x -
-            - - -
-            */
-            mines.push([x + 1, y - 1]);
-        }
-        /*
-        - - -
-        - x *
-        - - -
-        */
-        mines.push([x + 1, y]);
-        // if we aren't on the bottom edge
-        if (y < HEIGHT - 1) {
-            /*
-            - - -
-            - x -
-            - - *
-            */
-            mines.push([x + 1, y + 1]);
-        }
-    }
-    // return our 2-D array of coordinates
-    return mines;
-}
-
-/**
- * Reveal all mines near a target mine recursively
- * @param {Array} mines 2-D array containing the status of all mines
- * @param {Number} x X-coordiante of the initially revealed mine
- * @param {Number} y Y-coordiante of the initially revealed mine
- * @returns {Object} Contains mines, the updated 2-D mines array, and a mine indicating any if tripped, or null if not
- */
-function revealNear(mines, x, y) {
-    // get the mines that should be checked
-    const minesToTest = getMinesToTest(x, y);
-    // count up all the number of nearby marked squares
-    const numMarkedNear = minesToTest.reduce((numMines, coords) => (
-        numMines + (mines[coords[1]][coords[0]].state === MINE_MARKED ? 1 : 0)
-    ), 0);
-    // variable to store the triggered mine, if any
-    let mineRevealed = null;
-    // if there are exactly as many marked nearby squares as there are mines (user is ready to reveal nearby)
-    if (mines[y][x].minesNear === numMarkedNear) {
-        // for each mine to test
-        minesToTest.forEach(function(coords) {
-            // get the mine associated with that coordiante
-            let mine = mines[coords[1]][coords[0]];
-            // if the mine is still hidden
-            if (mine.state === MINE_HIDDEN) {
-                // reveal it
-                mine.state = MINE_REVEALED;
-                // if we tripped a mine
-                if (mine.isMine) {
-                    mineRevealed = coords;
-                    // indicate that the mine was autotripped
-                    mine.customClasses = "mineLossAutoClick";
-                } else {
-                    // recursively call the reveal function, using the coordinates of the newly revealed mine
-                    const temp = revealNear(mines, coords[0], coords[1]);
-                    // if we didn't trip any mines
-                    if (temp.mineRevealed === null) {
-                        // update the state of the board
-                        mines = temp.mines;
-                    }
-                }
-            }
-        });
-    }
-    // return the mines and any tripped mine, if applicable
-    return {mines, mineRevealed};
-}
 
 // timer to tell the player how long their game has been in progress
 class Timer extends Component {
@@ -229,19 +88,187 @@ function Mine(props) {
     );
 }
 
-class App extends Component {
+class Board extends Component {
     constructor(props) {
         super(props);
-        // whether or not there has been a click
+        // array to store the generated mines
+        let mines = [];
+        this.markedNum = 0;
+        // create HEIGHT inner arrays (rows)
+        for (let i = 0; i < props.height; ++i) {
+            mines.push([]);
+            // create WIDTH mine states per row (columns)
+            for (let j = 0; j < props.width; ++j) {
+                mines[i].push({
+                    // should start out hidden
+                    "state": MINE_HIDDEN,
+                    // will be set later
+                    "isMine": false,
+                    // will be set later
+                    "minesNear": 0,
+                    // no custom CSS for mines currently
+                    "customClasses": "",
+                });
+            }
+        }
         this.firstClick = true;
         this.state = {
-            // to be initialized once settings are input
-            "mines": [],
-            // start out in the input phase
-            "playing": GAME_INPUT,
+            // set mines to our (empty) 2-D array
+            "mines": mines,
         };
-        // number of marked squares
-        this.markedNum = 0;
+    }
+
+    /**
+     * Get all the adjacent coordinates of a specified mine
+     * @param {Number} x X-coordinate of the mine
+     * @param {Number} y Y-coordinate of the mine
+     * @returns {Array} A 2-D array containing adjcanet coordinate pairs
+     */
+    getMinesToTest(x, y) {
+        // block comments refer to the position of the mine to add
+        // where the x indicates the location of the specified
+        // and the * indicates the adjacent mine
+
+        // array to store nearby mines
+        let mines = [];
+        // if we aren't on the left edge
+        if (x > 0) {
+            // if we aren't at the top edge
+            if (y > 0) {
+                /*
+                * - -
+                - x -
+                - - -
+                */
+                mines.push([x - 1, y - 1]);
+            }
+            /*
+            - - -
+            * x -
+            - - -
+            */
+            mines.push([x - 1, y]);
+            // if we aren't on the bottom edge
+            if (y < this.props.height - 1) {
+                /*
+                - - -
+                - x -
+                * - -
+                */
+                mines.push([x - 1, y + 1]);
+            }
+        }
+        // if we aren't at the top edge
+        if (y > 0) {
+            /*
+            - * -
+            - x -
+            - - -
+            */
+            mines.push([x, y - 1]);
+        }
+        // if we aren't on the bottom edge
+        if (y < this.props.height - 1) {
+            /*
+            - - -
+            - x -
+            - * -
+            */
+            mines.push([x, y + 1]);
+        }
+        // if we aren't on the right edge
+        if (x < this.props.width - 1) {
+            // if we aren't at the top edge
+            if (y > 0) {
+                /*
+                - - *
+                - x -
+                - - -
+                */
+                mines.push([x + 1, y - 1]);
+            }
+            /*
+            - - -
+            - x *
+            - - -
+            */
+            mines.push([x + 1, y]);
+            // if we aren't on the bottom edge
+            if (y < this.props.height - 1) {
+                /*
+                - - -
+                - x -
+                - - *
+                */
+                mines.push([x + 1, y + 1]);
+            }
+        }
+        // return our 2-D array of coordinates
+        return mines;
+    }
+
+    /**
+     * Reveal all mines near a target mine recursively
+     * @param {Array} mines 2-D array containing the status of all mines
+     * @param {Number} x X-coordiante of the initially revealed mine
+     * @param {Number} y Y-coordiante of the initially revealed mine
+     * @returns {Object} Contains mines, the updated 2-D mines array, and a mine indicating any if tripped, or null if not
+     */
+    revealNear(mines, x, y) {
+        const boundRevealNear = this.revealNear.bind(this);
+        // get the mines that should be checked
+        const minesToTest = this.getMinesToTest(x, y);
+        // count up all the number of nearby marked squares
+        const numMarkedNear = minesToTest.reduce((numMines, coords) => (
+            numMines + (mines[coords[1]][coords[0]].state === MINE_MARKED ? 1 : 0)
+        ), 0);
+        // variable to store the triggered mine, if any
+        let mineRevealed = null;
+        // if there are exactly as many marked nearby squares as there are mines (user is ready to reveal nearby)
+        if (mines[y][x].minesNear === numMarkedNear) {
+            // for each mine to test
+            minesToTest.forEach(function(coords) {
+                // get the mine associated with that coordiante
+                let mine = mines[coords[1]][coords[0]];
+                // if the mine is still hidden
+                if (mine.state === MINE_HIDDEN) {
+                    // reveal it
+                    mine.state = MINE_REVEALED;
+                    // if we tripped a mine
+                    if (mine.isMine) {
+                        mineRevealed = coords;
+                        // indicate that the mine was autotripped
+                        mine.customClasses = "mineLossAutoClick";
+                    } else {
+                        // recursively call the reveal function, using the coordinates of the newly revealed mine
+                        const temp = boundRevealNear(mines, coords[0], coords[1]);
+                        // if we didn't trip any mines
+                        if (temp.mineRevealed === null) {
+                            // update the state of the board
+                            mines = temp.mines;
+                        }
+                    }
+                }
+            });
+        }
+        // return the mines and any tripped mine, if applicable
+        return {mines, mineRevealed};
+    }
+
+    /**
+     * Calculate how many non-mine squares are unrevealed
+     * @param {Array} mines 2-D array of mines to search through
+     * @returns {Number} The number of unrevealed non-mine squares
+     */
+    validSquaresLeft(mines) {
+        // for each row of mines
+        return mines.reduce((numMines, mineRow) =>
+            // add in a calculated number of mines per row
+            numMines + mineRow.reduce((rowTotal, mine) =>
+                // only add mines that are hidden but not mines
+                rowTotal + (mine.state === MINE_HIDDEN && mine.isMine === false ? 1 : 0
+                ), 0
+            ), 0);
     }
 
     // handler for when a mine is clicked
@@ -251,34 +278,41 @@ class App extends Component {
             // generate the mines to ensure a protected first click
             this.setState(function(prevState) {
                 // generate the desired number of mines
-                for (let i = 0; i < NUM_MINES; ++i) {
+                for (let i = 0; i < this.props.numMines; ++i) {
                     // keep picking random X and Y values until we hit a non-mine that isn't the clicked square
                     let mineX, mineY;
                     do {
-                        mineX = Math.floor(Math.random() * WIDTH);
-                        mineY = Math.floor(Math.random() * HEIGHT);
+                        mineX = Math.floor(Math.random() * this.props.width);
+                        mineY = Math.floor(Math.random() * this.props.height);
                     } while ((mineX === x && mineY === y) || prevState.mines[mineY][mineX].isMine === true);
                     // set that square to be a mine
                     prevState.mines[mineY][mineX].isMine = true;
                     // for each adjacent square
-                    getMinesToTest(mineX, mineY).forEach(function(coords) {
+                    this.getMinesToTest(mineX, mineY).forEach(function(coords) {
                         // increment the amount of nearby mines that it has
                         ++prevState.mines[coords[1]][coords[0]].minesNear;
                     });
                 }
+                return {
+                    "mines": prevState.mines,
+                };
+            }, function() {
                 // click has already happened, don't repeat this
                 this.firstClick = false;
+                // do the revealing for that square
+                this.handleClick(x, y);
             });
-        }
-        // if the game is going on and the mine isn't marked, we can perform a click
-        if (this.state.playing === GAME_IN_PROGRESS && this.state.mines[y][x].state !== MINE_MARKED) {
+        } else if (this.props.playing === GAME_IN_PROGRESS && this.state.mines[y][x].state !== MINE_MARKED) {
+            // if the game is going on and the mine isn't marked, we can perform a click
             // if a mine was clicked
             if (this.state.mines[y][x].isMine) {
+                this.props.updateState({
+                    "playing": GAME_LOSS,
+                });
                 this.setState((prevState) => {
                     // single out the clicked mine
                     prevState.mines[y][x].customClasses = "mineLossClick";
                     return {
-                        "playing": GAME_LOSS,
                         // for each of the rows of mines
                         "mines": prevState.mines.map((mineRow) => (
                             // for each square in each row
@@ -300,12 +334,13 @@ class App extends Component {
                     // reveal the clicked square
                     mines[y][x].state = MINE_REVEALED;
                     // reveal all nearby squares based on marked square
-                    let temp = revealNear(mines, x, y, true);
+                    let temp = this.revealNear(mines, x, y);
                     // if a mine got tripped
                     if (temp.mineRevealed !== null) {
-                        return {
-                            // game was lost
+                        this.props.updateState({
                             "playing": GAME_LOSS,
+                        });
+                        return {
                             // for each of the rows of mines
                             "mines": prevState.mines.map((mineRow) => (
                                 // for each square in each row
@@ -322,9 +357,13 @@ class App extends Component {
                         };
                     } else {
                         // nothing got tripped, continue
+                        // if nothing is left, victory!
+                        if (this.validSquaresLeft(temp.mines) === 0) {
+                            this.props.updateState({
+                                "playing": GAME_WIN,
+                            });
+                        }
                         return {
-                            // if all non-mines are revealed, they won, otherwise continue
-                            "playing": this.validSquaresLeft(temp.mines) === 0 ? GAME_WIN : GAME_IN_PROGRESS,
                             // update the mines
                             "mines": temp.mines,
                         };
@@ -332,22 +371,6 @@ class App extends Component {
                 });
             }
         }
-    }
-
-    /**
-     * Calculate how many non-mine squares are unrevealed
-     * @param {Array} mines 2-D array of mines to search through
-     * @returns {Number} The number of unrevealed non-mine squares
-     */
-    validSquaresLeft(mines) {
-        // for each row of mines
-        return mines.reduce((numMines, mineRow) =>
-            // add in a calculated number of mines per row
-            numMines + mineRow.reduce((rowTotal, mine) =>
-                // only add mines that are hidden but not mines
-                rowTotal + (mine.state === MINE_HIDDEN && mine.isMine === false ? 1 : 0
-                ), 0
-            ), 0);
     }
 
     // handler for when a mine is right clicked
@@ -377,163 +400,176 @@ class App extends Component {
         }
     }
 
-    // handler for when the inputs are finalized
-    handleSubmit(event) {
-        // set width, height, number of mines based on inputs
-        WIDTH = event.target[0].value;
-        HEIGHT = event.target[1].value;
-        NUM_MINES = event.target[2].value;
-        if (NUM_MINES <= WIDTH * HEIGHT / 2) {
-            // array to store the generated mines
-            let mines = [];
-            // create HEIGHT inner arrays (rows)
-            for (let i = 0; i < HEIGHT; ++i) {
-                mines.push([]);
-                // create WIDTH mine states per row (columns)
-                for (let j = 0; j < WIDTH; ++j) {
-                    mines[i].push({
-                        // should start out hidden
-                        "state": MINE_HIDDEN,
-                        // will be set later
-                        "isMine": false,
-                        // will be set later
-                        "minesNear": 0,
-                        // no custom CSS for mines currently
-                        "customClasses": "",
-                    });
-                }
-            }
-            this.setState({
-                // set mines to our (empty) 2-D array
-                "mines": mines,
-                // game has begun
-                "playing": GAME_IN_PROGRESS,
-            });
-        }
+    render() {
+        const {width, height, numMines, playing} = this.props;
+        const progress = this.firstClick === true ? 0 : 100 - (100 * this.validSquaresLeft(this.state.mines) / (height * width - numMines));
+        return (
+            <div>
+                {/* timer to show how long the game has been, only runs while the player hasn't won or lost */}
+                <Timer running={playing === GAME_IN_PROGRESS} />
+                {/* main board, dynamically adjust it to be in the middle of the screen */}
+                <div
+                    className="board"
+                    style={{
+                        "marginLeft": (window.innerWidth - (this.props.width * 27)) / 2,
+                    }}>
+                    {/* generate the board of mines */}
+                    {this.state.mines.map((mineRow, rowIndex) => (
+                        // create a row for each row of mines
+                        <div className="row" key={rowIndex}>
+                            {/* for each mine in the row */}
+                            {mineRow.map((mine, mineIndex) => (
+                                // generate a mine
+                                <Mine
+                                    key={mineIndex}
+                                    // pass it the current data of the mine
+                                    mine={mine}
+                                    // pass it the click handler
+                                    handleClick={this.handleClick.bind(this, mineIndex, rowIndex)}
+                                    // pass it the right click handler
+                                    handleRightClick={(event) => {
+                                        // make sure to prevent the default right click popup
+                                        event.preventDefault();
+                                        this.handleRightClick(mineIndex, rowIndex);
+                                    }} />
+                            ))}
+                        </div>
+                    ))}
+                </div>
+                {/* helpful info below the board */}
+                <div className="status">
+                    <div className={playing === GAME_WIN ? "win" : ""}>
+                        {/* if playing, show number of mines left, or 0 if the user placed too many markers */}
+                        {playing === GAME_IN_PROGRESS ? `Mines Left: ${Math.max(this.props.numMines - this.markedNum, 0)}` :
+                            // otherwise, good job! if the user won, you lost! if the user lost
+                            playing === GAME_WIN ? "Good job!" : "You lost!"}
+                    </div>
+                    {playing === GAME_IN_PROGRESS &&
+                        <div>
+                            Progress:
+                            {/* the containing blue progress bar, style it as such */}
+                            <div className="bar">
+                                {/* the inner progress bar */}
+                                <div
+                                    // necessary styling for the green inner bar
+                                    className="innerBar"
+                                    // make it as wide as the progress, relative to the containing bar
+                                    style={{"width": `${progress}%`}}>
+                                    {/* display percent progress to the nearest tenth */}
+                                    {Math.round(10 * progress) / 10}%
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                {/* if the game ended, offer up a restart */}
+                {playing !== GAME_IN_PROGRESS &&
+                    <button onClick={this.props.updateState.bind(this, {
+                        "playing": GAME_INPUT,
+                    })}>Restart</button>}
+            </div>
+        );
+    }
+}
+
+/**
+ * Input form to get game settings
+ * @param {Object} props Provides a handler for input change and submit, as well as the current width, height, and number of mines
+ * @returns {Component} The rendered input form
+ */
+function Input({handleInputChange, handleSubmit, height, numMines, width}) {
+    // const {handleInputChange, handleSubmit, height, numMines, width} = this.props;
+    return (
+        <form onSubmit={handleSubmit.bind(this)}>
+            {/* input for width of board */}
+            <label>Board width <input
+                // make it a numeric input
+                type="number"
+                // need at least 1 wide board
+                min={1}
+                // don't make it too wide or weird wrapping happens
+                max={window.innerWidth / 25 - 6}
+                // initially set to whatever the width was
+                value={width}
+                onChange={handleInputChange.bind(this, "width")} />
+            </label>
+            {/* input for height of board */}
+            <label>Board height <input
+                // make it a numeric input
+                type="number"
+                // need at least 1 tall board
+                min={1}
+                // initially set to whatever the height was
+                value={height}
+                onChange={handleInputChange.bind(this, "height")}
+            />
+            </label>
+            {/* input for number of mines */}
+            <label>Number of mines <input
+                // make it a numeric input
+                type="number"
+                // need at least 1 mine
+                min={1}
+                // too many mines means the random mine generation could stall, don't allow that
+                max={width * height / 2}
+                // initially set to whatever the number of mines was
+                value={numMines}
+                onChange={handleInputChange.bind(this, "numMines")} />
+            </label>
+            {/* button to start playing */}
+            <input type="submit" value="Play!" />
+        </form>
+    );
+}
+
+class App extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            // start out in the input phase
+            "playing": GAME_INPUT,
+            "width": 30,
+            "height": 15,
+            "numMines": 75,
+        };
     }
 
-    /**
-     * Resets the game state
-     */
-    restartGame() {
-        // no marked squares
-        this.markedNum = 0;
-        // no clicks yet
-        this.firstClick = true;
+    updateState(updates) {
+        this.setState(updates);
+    }
+
+    handleSubmit(event) {
+        event.preventDefault();
         this.setState({
-            // clear mines
-            "mines": [],
-            // go back to the input page
-            "playing": GAME_INPUT,
+            "playing": GAME_IN_PROGRESS,
+        });
+    }
+
+    handleInputChange(inputType, event) {
+        this.setState({
+            [inputType]: event.target.value,
         });
     }
 
     render() {
-        // calculate the percent of all non-mines that are revealed
-        const progress = this.firstClick === true ? 0 : 100 - (100 * this.validSquaresLeft(this.state.mines) / (HEIGHT * WIDTH - NUM_MINES));
         return (
             <div>
                 {/* are we playing the game? */}
                 {this.state.playing !== GAME_INPUT ?
-                    // if so render the play screen
-                    <div>
-                        {/* timer to show how long the game has been, only runs while the player hasn't won or lost */}
-                        <Timer running={this.state.playing === GAME_IN_PROGRESS} />
-                        {/* main board, dynamically adjust it to be in the middle of the screen */}
-                        <div
-                            className="board"
-                            style={{
-                                "marginLeft": (window.innerWidth - (WIDTH * 27)) / 2,
-                            }}>
-                            {/* generate the board of mines */}
-                            {this.state.mines.map((mineRow, rowIndex) => (
-                                // create a row for each row of mines
-                                <div className="row" key={rowIndex}>
-                                    {/* for each mine in the row */}
-                                    {mineRow.map((mine, mineIndex) => (
-                                        // generate a mine
-                                        <Mine
-                                            key={mineIndex}
-                                            // pass it the current data of the mine
-                                            mine={mine}
-                                            // pass it the click handler
-                                            handleClick={this.handleClick.bind(this, mineIndex, rowIndex)}
-                                            // pass it the right click handler
-                                            handleRightClick={(event) => {
-                                                // make sure to prevent the default right click popup
-                                                event.preventDefault();
-                                                this.handleRightClick(mineIndex, rowIndex);
-                                            }} />
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                        {/* helpful info below the board */}
-                        <div className="status">
-                            <div className={this.state.playing === GAME_WIN ? "win" : ""}>
-                                {/* if playing, show number of mines left, or 0 if the user placed too many markers */}
-                                {this.state.playing === GAME_IN_PROGRESS ? `Mines Left: ${Math.max(NUM_MINES - this.markedNum, 0)}` :
-                                    // otherwise, good job! if the user won, you lost! if the user lost
-                                    this.state.playing === GAME_WIN ? "Good job!" : "You lost!"}
-                            </div>
-                            {this.state.playing === GAME_IN_PROGRESS &&
-                                <div>
-                                    Progress:
-                                    {/* the containing blue progress bar, style it as such */}
-                                    <div className="bar">
-                                        {/* the inner progress bar */}
-                                        <div
-                                            // necessary styling for the green inner bar
-                                            className="innerBar"
-                                            // make it as wide as the progress, relative to the containing bar
-                                            style={{"width": `${progress}%`}}>
-                                            {/* display percent progress to the nearest tenth */}
-                                            {Math.round(10 * progress) / 10}%
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        {/* if the game ended, offer up a restart */}
-                        {this.state.playing !== GAME_IN_PROGRESS &&
-                            <button onClick={this.restartGame.bind(this)}>Restart</button>}
-                    </div> :
-                    // waiting on user input, show the form
-                    <form onSubmit={this.handleSubmit.bind(this)}>
-                        {/* input for width of board */}
-                        <label>Board width <input
-                            // make it a numeric input
-                            type="number"
-                            // need at least 1 wide board
-                            min={1}
-                            // don't make it too wide or weird wrapping happens
-                            max={window.innerWidth / 25 - 6}
-                            // initially set to whatever the width was
-                            defaultValue={WIDTH} />
-                        </label>
-                        {/* input for height of board */}
-                        <label>Board height <input
-                            // make it a numeric input
-                            type="number"
-                            // need at least 1 tall board
-                            min={1}
-                            // initially set to whatever the height was
-                            defaultValue={HEIGHT} />
-                        </label>
-                        {/* input for number of mines */}
-                        <label>Number of mines <input
-                            // make it a numeric input
-                            type="number"
-                            // need at least 1 mine
-                            min={1}
-                            // too many mines means the random mine generation could stall, don't allow this
-                            max={WIDTH * HEIGHT / 2}
-                            // initially set to whatever the number of mines was
-                            defaultValue={NUM_MINES} />
-                        </label>
-                        {/* button to start playing */}
-                        <input type="submit" value="Play!" />
-                    </form>
+                    // if so, show the game!
+                    <Board
+                        width={this.state.width}
+                        height={this.state.height}
+                        numMines={this.state.numMines}
+                        playing={this.state.playing}
+                        updateState={this.updateState.bind(this)} /> :
+                    // otherwise, waiting on user input, show the form
+                    <Input
+                        width={this.state.width}
+                        height={this.state.height}
+                        numMines={this.state.numMines}
+                        handleSubmit={this.handleSubmit.bind(this)}
+                        handleInputChange={this.handleInputChange.bind(this)} />
                 }
             </div>
         );
