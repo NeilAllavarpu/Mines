@@ -12,6 +12,10 @@ body {
     line-height: 25px;
 }
 
+.after {
+    opacity: 0.25;
+}
+
 body {
     background-color: beige;
     text-align: center;

@@ -321,6 +321,7 @@ class Board extends Component {
                                 return {
                                     ...mine,
                                     "state": !(mine.isMine === true && mine.state === MINE_MARKED) ? MINE_REVEALED : MINE_MARKED,
+                                    "customClasses": `${mine.customClasses} ${mine.state === MINE_HIDDEN && mine.customClasses !== "mineLossClick" ? "after" : ""}`,
                                 };
                             })
                         )),
@@ -346,7 +347,7 @@ class Board extends Component {
                                 // for each square in each row
                                 mineRow.map((mine) => {
                                     // set the square to be revealed, unless it was properly marked (show the user their correct markings)
-                                    let mineCSS = mine.isMine === false && mine.state === MINE_MARKED ? "falseMark" : "";
+                                    let mineCSS = mine.isMine === false && mine.state === MINE_MARKED ? "falseMark" : mine.state === MINE_HIDDEN && mine.customClasses !== "mineLossAutoClick" ? "after" : mine.customClasses;
                                     return {
                                         ...mine,
                                         "customClasses": mineCSS,
