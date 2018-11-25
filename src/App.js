@@ -6,6 +6,7 @@ const GAME_INPUT = -1;
 const GAME_IN_PROGRESS = 0;
 const GAME_LOSS = 1;
 const GAME_WIN = 2;
+const GAME_PAUSE = 3;
 
 // possible states of mines
 const MINE_HIDDEN = 0;
@@ -21,6 +22,7 @@ class Timer extends Component {
         this.state = {
             // amound of seconds that have passed since starting
             "seconds": 0,
+            "last": Date.now(),
         };
         // ask to update the timer (will occur every rendering until stopped)
         requestAnimationFrame(this.updateTimer.bind(this));
@@ -30,9 +32,12 @@ class Timer extends Component {
      * Update the number of seconds for the timer
      */
     updateTimer() {
-        this.setState({
+        this.setState((prevState) => {
             // update the number of seconds taht have passed since start
-            "seconds": Math.floor((Date.now() - this.start) / 1000),
+            return {
+                "seconds": prevState.seconds + (Date.now() - prevState.last),
+                "last": Date.now(),
+            };
         }, function() {
             // if we are still running
             if (this.props.running === true) {
@@ -42,14 +47,30 @@ class Timer extends Component {
         });
     }
 
+    /**
+     * Continue the timer after it was stopped
+     */
+    resume() {
+        this.setState({
+            // update the last tick timing to prevent a large spike in time
+            "last": Date.now(),
+        }, function() {
+            // begin the updating loop for the timer
+            requestAnimationFrame(this.updateTimer.bind(this));
+        });
+    }
+
     render() {
-        return (
-            <div>
-                {/* Format of timer => `Time: minutes:seconds` (calculated based on how long since the timer was started) */}
-                Time: {Math.floor(this.state.seconds / 60)}:
-                {(this.state.seconds % 60).toLocaleString(undefined, {"minimumIntegerDigits": 2})}
-            </div>
-        );
+        // number of seconds to display on timer
+        const seconds = Math.floor(this.state.seconds / 1000);
+        return this.props.display ?
+            // only show timer if that is wanted
+            (<div>
+                {/* Format of timer => `Time: minutes:seconds` */}
+                Time: {Math.floor(seconds / 60)}:
+                {(seconds % 60).toLocaleString(undefined, {"minimumIntegerDigits": 2})}
+                {/* if we want to not show timer, just return null */}
+            </div>) : null;
     }
 }
 
@@ -93,6 +114,9 @@ class Board extends Component {
         super(props);
         // array to store the generated mines
         let mines = [];
+        // ref for the timer so that we can resume it after pause
+        this.timer = React.createRef();
+        // number of marked squares
         this.markedNum = 0;
         // create HEIGHT inner arrays (rows)
         for (let i = 0; i < props.height; ++i) {
@@ -111,6 +135,7 @@ class Board extends Component {
                 });
             }
         }
+        // a click has not yet happened
         this.firstClick = true;
         this.state = {
             // set mines to our (empty) 2-D array
@@ -427,73 +452,93 @@ class Board extends Component {
     }
 
     render() {
+        // get relevant info from props
         const {width, height, numMines, playing} = this.props;
+        // number of squares revealed of total number of non-mines, as a percentage
         const progress = this.firstClick === true ? 0 : 100 - (100 * this.validSquaresLeft(this.state.mines) / (height * width - numMines));
         return (
-            <div>
-                {/* timer to show how long the game has been, only runs while the player hasn't won or lost */}
-                <Timer running={playing === GAME_IN_PROGRESS} />
-                {/* main board, dynamically adjust it to be in the middle of the screen */}
-                <div
-                    className="board"
-                    style={{
-                        "marginLeft": (window.innerWidth - (this.props.width * 27)) / 2,
-                    }}>
-                    {/* generate the board of mines */}
-                    {this.state.mines.map((mineRow, rowIndex) => (
-                        // create a row for each row of mines
-                        <div className="row" key={rowIndex}>
-                            {/* for each mine in the row */}
-                            {mineRow.map((mine, mineIndex) => (
-                                // generate a mine
-                                <Mine
-                                    key={mineIndex}
-                                    // pass it the current data of the mine
-                                    mine={mine}
-                                    // pass it the click handler
-                                    handleClick={this.handleClick.bind(this, mineIndex, rowIndex)}
-                                    // pass it the right click handler
-                                    handleRightClick={(event) => {
-                                        // make sure to prevent the default right click popup
-                                        event.preventDefault();
-                                        this.handleRightClick(mineIndex, rowIndex);
-                                    }} />
-                            ))}
-                        </div>
-                    ))}
-                </div>
-                {/* helpful info below the board */}
-                <div className="status">
-                    <div className={playing === GAME_WIN ? "win" : ""}>
-                        {/* if playing, show number of mines left, or 0 if the user placed too many markers */}
-                        {playing === GAME_IN_PROGRESS ? `Mines Left: ${Math.max(this.props.numMines - this.markedNum, 0)}` :
-                            // otherwise, good job! if the user won, you lost! if the user lost
-                            playing === GAME_WIN ? "Good job!" : "You lost!"}
+            <div> {/* timer to show how long the game has been, only runs while the player hasn't won or lost */}
+                <Timer running={playing === GAME_IN_PROGRESS} display={playing !== GAME_PAUSE} ref={ref => this.timer = ref} />
+                {(playing === GAME_PAUSE) ? (
+                    // if the game is paused, show the pause screen
+                    <div>
+                        Paused<br />
+                        {/* button that will resume the game */}
+                        <button onClick={() => {
+                            this.props.updateState({
+                                "playing": GAME_IN_PROGRESS,
+                            });
+                            this.timer.resume();
+                        }}>
+                            Resume
+                        </button>
                     </div>
-                    {playing === GAME_IN_PROGRESS &&
-                        <div>
-                            Progress:
-                            {/* the containing blue progress bar, style it as such */}
-                            <div className="bar">
-                                {/* the inner progress bar */}
-                                <div
-                                    // necessary styling for the green inner bar
-                                    className="innerBar"
-                                    // make it as wide as the progress, relative to the containing bar
-                                    style={{"width": `${progress}%`}}>
-                                    {/* display percent progress to the nearest tenth */}
-                                    {Math.round(10 * progress) / 10}%
-                                </div>
+                ) : (<div>
+                    {/* otherwise, show the main game screen */}
+                    {/* main board, dynamically adjust it to be in the middle of the screen */}
+                    <div
+                        className="board"
+                        style={{
+                            "marginLeft": (window.innerWidth - (this.props.width * 27)) / 2,
+                        }}>
+                        {/* generate the board of mines */}
+                        {this.state.mines.map((mineRow, rowIndex) => (
+                            // create a row for each row of mines
+                            <div className="row" key={rowIndex}>
+                                {/* for each mine in the row */}
+                                {mineRow.map((mine, mineIndex) => (
+                                    // generate a mine
+                                    <Mine
+                                        key={mineIndex}
+                                        // pass it the current data of the mine
+                                        mine={mine}
+                                        // pass it the click handler
+                                        handleClick={this.handleClick.bind(this, mineIndex, rowIndex)}
+                                        // pass it the right click handler
+                                        handleRightClick={(event) => {
+                                            // make sure to prevent the default right click popup
+                                            event.preventDefault();
+                                            this.handleRightClick(mineIndex, rowIndex);
+                                        }} />
+                                ))}
                             </div>
+                        ))}
+                    </div>
+                    {/* helpful info below the board */}
+                    <div className="status">
+                        <div className={playing === GAME_WIN ? "win" : ""}>
+                            {/* if playing, show number of mines left, or 0 if the user placed too many markers */}
+                            {playing === GAME_IN_PROGRESS ? `Mines Left: ${Math.max(this.props.numMines - this.markedNum, 0)}` :
+                                // otherwise, good job! if the user won, you lost! if the user lost
+                                playing === GAME_WIN ? "Good job!" : "You lost!"}
                         </div>
-                    }
-                </div>
-                {/* if the game ended, offer up a restart */}
-                {playing !== GAME_IN_PROGRESS &&
-                    <button onClick={this.props.updateState.bind(this, {
-                        "playing": GAME_INPUT,
-                    })}>Restart</button>}
-            </div>
+                        {playing === GAME_IN_PROGRESS &&
+                            <div>
+                                Progress:
+                                {/* the containing blue progress bar, style it as such */}
+                                <div className="bar">
+                                    {/* the inner progress bar */}
+                                    <div
+                                        // necessary styling for the green inner bar
+                                        className="innerBar"
+                                        // make it as wide as the progress, relative to the containing bar
+                                        style={{"width": `${progress}%`}}>
+                                        {/* display percent progress to the nearest tenth */}
+                                        {Math.round(10 * progress) / 10}%
+                                    </div>
+                                </div>
+                            </div>}
+                    </div>
+                    {/* if the game ended, offer up a restart */}
+                    {playing !== GAME_IN_PROGRESS ?
+                        <button onClick={this.props.updateState.bind(this, {
+                            "playing": GAME_INPUT,
+                        })}>Restart</button> :
+                        <button onClick={this.props.updateState.bind(this, {
+                            "playing": GAME_PAUSE,
+                        })}>Pause</button>}
+                </div>)}
+            </div >
         );
     }
 }
@@ -558,6 +603,18 @@ class App extends Component {
             "height": 15,
             "numMines": 75,
         };
+        // variable so that the callback can set the app's state
+        const app = this;
+        // when the window loses focus
+        window.addEventListener("blur", function() {
+            // update the state of the app
+            app.setState((prevState) => {
+                return {
+                    // if we were in a game, pause it, otherwise nothing to do
+                    "playing": prevState.playing === GAME_IN_PROGRESS ? GAME_PAUSE : prevState.playing,
+                };
+            });
+        }, false);
     }
 
     updateState(updates) {
@@ -595,8 +652,7 @@ class App extends Component {
                         height={this.state.height}
                         numMines={this.state.numMines}
                         handleSubmit={this.handleSubmit.bind(this)}
-                        handleInputChange={this.handleInputChange.bind(this)} />
-                }
+                        handleInputChange={this.handleInputChange.bind(this)} />}
             </div>
         );
     }
