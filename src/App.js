@@ -277,22 +277,33 @@ class Board extends Component {
         if (this.firstClick === true) {
             // generate the mines to ensure a protected first click
             this.setState(function(prevState) {
+                // get all the coordinates
+                let possibilities = [];
+                for (let i = 0; i < prevState.mines.length; ++i) {
+                    for (let j = 0; j < prevState.mines[i].length; ++j) {
+                        // but don't add the clicked coordinate as a possible mien
+                        if (!(j === x && i === y)) {
+                            possibilities.push([j, i]);
+                        }
+                    }
+                }
                 // generate the desired number of mines
                 for (let i = 0; i < this.props.numMines; ++i) {
-                    // keep picking random X and Y values until we hit a non-mine that isn't the clicked square
-                    let mineX, mineY;
-                    do {
-                        mineX = Math.floor(Math.random() * this.props.width);
-                        mineY = Math.floor(Math.random() * this.props.height);
-                    } while ((mineX === x && mineY === y) || prevState.mines[mineY][mineX].isMine === true);
+                    // get a random index that isn't the clicked coordinate or already a mine
+                    const index = Math.floor(Math.random() * possibilities.length);
+                    // get the coordinates of that index
+                    const coord = possibilities[index];
+                    // make sure we don't re-pick that for the next mine
+                    possibilities.splice(index, 1);
                     // set that square to be a mine
-                    prevState.mines[mineY][mineX].isMine = true;
+                    prevState.mines[coord[1]][coord[0]].isMine = true;
                     // for each adjacent square
-                    this.getMinesToTest(mineX, mineY).forEach(function(coords) {
+                    this.getMinesToTest(coord[0], coord[1]).forEach(function(coords) {
                         // increment the amount of nearby mines that it has
                         ++prevState.mines[coords[1]][coords[0]].minesNear;
                     });
                 }
+                // set our mines
                 return {
                     "mines": prevState.mines,
                 };
@@ -511,8 +522,8 @@ function Input({handleInputChange, handleSubmit, height, numMines, width}) {
                 type="number"
                 // need at least 1 mine
                 min={1}
-                // too many mines means the random mine generation could stall, don't allow that
-                max={width * height / 2}
+                // must have at least 1 non-mine
+                max={width * height - 1}
                 // initially set to whatever the number of mines was
                 value={numMines}
                 onChange={handleInputChange.bind(this, "numMines")} />

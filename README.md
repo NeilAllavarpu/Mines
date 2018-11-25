@@ -13,7 +13,7 @@ A simple minesweeper game, made with React.
 
 ## How to play
 
-At the start screen, enter your desired width, height, and number of mines for your game. The board cannot be wider than the screen, and the number of mines must be less than half the number of total squares, to prevent the application from freezing when generating the mines; play will not commence until these requirements are met. Default is a 30x15 board with 75 mines.
+At the start screen, enter your desired width, height, and number of mines for your game. The board cannot be wider than the screen, and the number of mines must be less than the total number of squares; play will not commence until these requirements are met. Default is a 30x15 board with 75 mines.
 
 Clicking on untested squares reveals them. Right-clicking on a square flags it as a mine as a `!`, but is not required.
 
