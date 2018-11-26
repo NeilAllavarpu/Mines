@@ -252,25 +252,31 @@ class Board extends Component {
         // if there are exactly as many marked nearby squares as there are mines (user is ready to reveal nearby)
         if (mines[y][x].minesNear === numMarkedNear) {
             // for each mine to test
+            let toContinue = true;
             minesToTest.forEach(function(coords) {
-                // get the mine associated with that coordiante
-                let mine = mines[coords[1]][coords[0]];
-                // if the mine is still hidden
-                if (mine.state === MINE_HIDDEN) {
-                    // reveal it
-                    mine.state = MINE_REVEALED;
-                    // if we tripped a mine
-                    if (mine.isMine) {
-                        mineRevealed = coords;
-                        // indicate that the mine was autotripped
-                        mine.customClasses = "mineLossAutoClick";
-                    } else {
-                        // recursively call the reveal function, using the coordinates of the newly revealed mine
-                        const temp = boundRevealNear(mines, coords[0], coords[1]);
-                        // if we didn't trip any mines
-                        if (temp.mineRevealed === null) {
-                            // update the state of the board
-                            mines = temp.mines;
+                if (toContinue) {
+                    // get the mine associated with that coordiante
+                    let mine = mines[coords[1]][coords[0]];
+                    // if the mine is still hidden
+                    if (mine.state === MINE_HIDDEN) {
+                        // reveal it
+                        mine.state = MINE_REVEALED;
+                        // if we tripped a mine
+                        if (mine.isMine) {
+                            mineRevealed = coords;
+                            // indicate that the mine was autotripped
+                            mine.customClasses = "mineLossAutoClick";
+                        } else {
+                            // recursively call the reveal function, using the coordinates of the newly revealed mine
+                            const temp = boundRevealNear(mines, coords[0], coords[1]);
+                            // if we didn't trip any mines
+                            if (temp.mineRevealed === null) {
+                                // update the state of the board
+                                mines = temp.mines;
+                            } else {
+                                toContinue = false;
+                                mineRevealed = temp.mineRevealed;
+                            }
                         }
                     }
                 }
@@ -382,11 +388,11 @@ class Board extends Component {
                             "mines": prevState.mines.map((mineRow) => (
                                 // for each square in each row
                                 mineRow.map((mine) => {
-                                    // set the square to be revealed, unless it was properly marked (show the user their correct markings)
-                                    let mineCSS = mine.isMine === false && mine.state === MINE_MARKED ? "falseMark" : mine.state === MINE_HIDDEN && mine.customClasses !== "mineLossAutoClick" ? "after" : mine.customClasses;
                                     return {
                                         ...mine,
-                                        "customClasses": mineCSS,
+                                        // set the square to be revealed, unless it was properly marked (show the user their correct markings)
+                                        // and make any squares revealed after the loss be greyed out
+                                        "customClasses": mine.isMine === false && mine.state === MINE_MARKED ? "falseMark" : mine.state === MINE_HIDDEN && mine.customClasses !== "mineLossAutoClick" ? "after" : mine.customClasses,
                                         "state": !(mine.isMine === true && mine.state === MINE_MARKED) ? MINE_REVEALED : MINE_MARKED,
                                     };
                                 })
