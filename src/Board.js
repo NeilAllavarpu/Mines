@@ -370,7 +370,7 @@ export class Board extends React.Component {
                 </div>
             );
         } else {
-            let button, status;
+            let button, status, message, mineSize;
             // while playing, show the blue and green progress bar
             if (playing === GAME.IN_PROGRESS) {
                 status = (
@@ -403,11 +403,16 @@ export class Board extends React.Component {
                         "playing": GAME.INPUT,
                     })}>Restart</button>
                 );
-                if (playing === GAME.WIN) {
-                    status = <div className="status win">Good job!</div>;
-                } else if (playing === GAME.LOSS) {
-                    status = <div className="status">You lost!</div>;
-                }
+            }
+            if (playing === GAME.WIN) {
+                message = <div className="status win">Good job!</div>;
+            } else if (playing === GAME.LOSS) {
+                message = <div className="status">You lost!</div>;
+            }
+            if (80 / this.props.width < 80 / this.props.height) {
+                mineSize = `${80 / this.props.width}vw`;
+            } else {
+                mineSize = `${80 / this.props.height}vh`;
             }
             mainContent = (
                 <div>
@@ -428,6 +433,7 @@ export class Board extends React.Component {
                                         handleClick={() => {
                                             this.handleClick(mineIndex, rowIndex);
                                         }}
+                                        mineSize={mineSize}
                                         // pass it the right click handler
                                         handleRightClick={(event) => {
                                             // make sure to prevent the default right click popup
@@ -440,6 +446,7 @@ export class Board extends React.Component {
                     </div>
                     {/* helpful info below the board */}
                     {status}
+                    {message}
                     {/* if the game ended, offer up a restart */}
                     {button}
                 </div>
@@ -448,7 +455,7 @@ export class Board extends React.Component {
         return (
             <div>
                 {/* timer to show how long the game has been */}
-                <Timer
+                < Timer
                     // only running while game is playing
                     running={playing === GAME.IN_PROGRESS}
                     // don't show on pause screen

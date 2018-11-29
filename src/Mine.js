@@ -7,7 +7,7 @@ import React from "react";
  * @param {Object} props Contains a mine with its state (hidden, revealed, or marked), number of mines near it, a click handler + right click handler, and any potential custom classes
  * @returns {JSX} The rendered mine
  */
-export function Mine({mine, handleClick, handleRightClick}) {
+export function Mine({mine, mineSize, handleClick, handleRightClick}) {
     // CSS classes of the mine
     let classes = `mine ${mine.customClasses}`,
         // text to show on the mine
@@ -40,7 +40,13 @@ export function Mine({mine, handleClick, handleRightClick}) {
             // set up the click handler
             onClick={handleClick}
             // set up the right click handler
-            onContextMenu={handleRightClick}>
+            onContextMenu={handleRightClick}
+            style={{
+                "fontSize": mineSize,
+                "height": mineSize,
+                "lineHeight": mineSize,
+                "width": mineSize,
+            }}>
             {/* show the computed text */}
             <div className="label">{labelText}</div>
         </div>
@@ -51,4 +57,5 @@ Mine.propTypes = {
     "handleClick": PropTypes.func.isRequired,
     "handleRightClick": PropTypes.func.isRequired,
     "mine": PropTypes.object.isRequired,
+    "mineSize": PropTypes.number.isRequired,
 };

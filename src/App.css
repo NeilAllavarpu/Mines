@@ -5,13 +5,15 @@ body {
 }
 
 .mine {
-    border: 1px solid #000;
+    border: .1px solid #000;
     float: left;
-    height: 25px;
     margin: 0px;
     padding: 0;
-    width: 25px;
-    line-height: 25px;
+}
+
+.row::after {
+    clear: both;
+    display: table;
 }
 
 .board {

@@ -17,7 +17,7 @@ export function Input({handleInputChange, handleSubmit, height, numMines, width}
                 // need at least 1 wide board
                 min={1}
                 // don't make it too wide or weird wrapping happens
-                // max={Math.floor((window.innerWidth / 25) - 6)}
+                max={Math.floor(window.innerWidth / 6)}
                 // initially set to whatever the width was
                 value={width}
                 onChange={handleInputChange.bind(this, "width")} />
