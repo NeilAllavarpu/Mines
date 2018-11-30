@@ -20,7 +20,8 @@ export function Input({handleInputChange, handleSubmit, height, numMines, width}
                 max={Math.floor(window.innerWidth / 6)}
                 // initially set to whatever the width was
                 value={width}
-                onChange={handleInputChange.bind(this, "width")} />
+                name="width"
+                onChange={handleInputChange.bind(this)} />
             </label>
             {/* input for height of board */}
             <label>Board height <input
@@ -30,7 +31,8 @@ export function Input({handleInputChange, handleSubmit, height, numMines, width}
                 min={1}
                 // initially set to whatever the height was
                 value={height}
-                onChange={handleInputChange.bind(this, "height")}
+                name="height"
+                onChange={handleInputChange.bind(this)}
             />
             </label>
             {/* input for number of mines */}
@@ -43,7 +45,8 @@ export function Input({handleInputChange, handleSubmit, height, numMines, width}
                 max={(width * height) - 1}
                 // initially set to whatever the number of mines was
                 value={numMines}
-                onChange={handleInputChange.bind(this, "numMines")} />
+                name="numMines"
+                onChange={handleInputChange.bind(this)} />
             </label>
             {/* button to start playing */}
             <input type="submit" value="Play!" />

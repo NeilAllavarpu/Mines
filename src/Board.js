@@ -121,8 +121,6 @@ export class Board extends React.Component {
      * @returns {Object} Contains mines, the updated 2-D mines array, and a mine indicating any if tripped, or null if not
      */
     revealNear(mines, mineX, mineY) {
-        let mineRevealed = false,
-            newMines = [...mines];
         // get the mines that should be checked
         const minesToTest = this.getMinesToTest(mineX, mineY),
             // count up all the number of nearby marked squares
@@ -134,48 +132,48 @@ export class Board extends React.Component {
                 }
             }, 0);
         // if there are as many marked nearby squares as there are nearby mines, begin the reveal
-        if (newMines[mineY][mineX].minesNear === numMarkedNear) {
-            minesToTest.forEach((coords) => {
-                let mine = newMines[coords[1]][coords[0]];
-                if (mine.state === MINE.MARKED && !mine.isMine) {
-                    mineRevealed = true;
-                    mine.customClasses = "mineLossAutoClick";
-                    mineRevealed = mine;
-                }
-            });
-            // for each mine to test
-            if (mineRevealed === false) {
-                minesToTest.forEach((coords) => {
-                    if (mineRevealed === false) {
-                        // get the mine associated with that coordiante
-                        let mine = mines[coords[1]][coords[0]];
-                        // if the mine is still hidden
-                        if (mine.state === MINE.HIDDEN) {
+        if (mines[mineY][mineX].minesNear === numMarkedNear) {
+            for (let index = 0; index < minesToTest.length; index++) {
+                const coords = minesToTest[index];
+                let mine = mines[coords[1]][coords[0]];
+                if (mine.state === MINE.MARKED && mine.isMine === false) {
+                    this.triggerLoss();
+                    return {
+                        "mineRevealed": true,
+                        mines,
+                    };
+                } else {
+                    // get the mine associated with that coordiante
+                    console.log(mines);
+                    let mine = mines[coords[1]][coords[0]];
+                    // if the mine is still hidden
+                    if (mine.state === MINE.HIDDEN) {
+                        // if we tripped a mine
+                        if (mine.isMine) {
+                            // end it all
+                            this.triggerLoss();
+                            return {
+                                "mineRevealed": true,
+                                mines,
+                            };
+                        } else {
                             // reveal it
                             mine.state = MINE.REVEALED;
-                            // if we tripped a mine
-                            if (mine.isMine) {
-                                mineRevealed = coords;
-                                // indicate that the mine was autotripped
-                                mine.customClasses = "mineLossAutoClick";
-                            } else {
-                                // recursively call the reveal function, using the coordinates of the newly revealed mine
-                                const temp = this.revealNear(newMines, coords[0], coords[1]);
-                                // if we didn't trip any mines
-                                ({mineRevealed} = temp);
-                                if (mineRevealed === false) {
-                                    // update the state of the board
-                                    newMines = temp.mines;
-                                }
+                            // recursively call the reveal function, using the coordinates of the newly revealed mine
+                            const temp = this.revealNear(mines, coords[0], coords[1]);
+                            // if we didn't trip any mines
+                            if (temp.mineRevealed === false) {
+                                // update the state of the board
+                                mines = temp.mines;
                             }
                         }
                     }
-                }, this);
+                }
             }
         }
         // return the mines and any tripped mine, if applicable
         return {
-            mineRevealed,
+            "mineRevealed": false,
             mines,
         };
     }
@@ -197,20 +195,21 @@ export class Board extends React.Component {
     }
 
     triggerLoss() {
+        console.log("got here")
         this.setState((prevState) => ({
             // for each square on the board
             "mines": prevState.mines.map((row) => row.map((element) => {
                 // shallow copy the square
                 let square = {...element};
+                // notify of any false marks
                 if (square.isMine === false && square.state === MINE.MARKED) {
                     square.customClasses += " falseMark";
                 }
-                // mark the clicked mine specially
+                // any untouched mines are grayed out
                 if (square.state === MINE.HIDDEN) {
-                    // any untouched mines are grayed out
                     square.customClasses += " after";
                 }
-                if (square.isMine === false || square.state === MINE.HIDDEN) {
+                if (!(square.isMine === true && square.state === MINE.MARKED)) {
                     square.state = MINE.REVEALED;
                 }
                 return square;
@@ -472,7 +471,7 @@ export class Board extends React.Component {
 Board.propTypes = {
     "height": PropTypes.number.isRequired,
     "numMines": PropTypes.number.isRequired,
-    "playing": PropTypes.bool.isRequired,
+    "playing": PropTypes.number.isRequired,
     "updateState": PropTypes.func.isRequired,
     "width": PropTypes.number.isRequired,
 };
