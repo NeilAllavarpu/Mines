@@ -1,11 +1,11 @@
 self.__precacheManifest = [
   {
-    "revision": "8e93252c7244819f4f73",
-    "url": "/Mines/static/css/main.23ed5f46.chunk.css"
+    "revision": "60d8924830cf9b8a6d81",
+    "url": "/Mines/static/css/main.cd9a8fc3.chunk.css"
   },
   {
-    "revision": "8e93252c7244819f4f73",
-    "url": "/Mines/static/js/main.8e93252c.chunk.js"
+    "revision": "60d8924830cf9b8a6d81",
+    "url": "/Mines/static/js/main.60d89248.chunk.js"
   },
   {
     "revision": "5d172ab80c6eab3af3e6",
@@ -16,7 +16,7 @@ self.__precacheManifest = [
     "url": "/Mines/static/js/runtime~main.063d5f9a.js"
   },
   {
-    "revision": "eb192784786377ffd0473b43d3138165",
+    "revision": "c33162e770faa106f50eabe64dad205d",
     "url": "/Mines/index.html"
   }
 ];

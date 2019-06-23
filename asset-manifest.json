@@ -1,13 +1,13 @@
 {
-  "main.css": "/Mines/static/css/main.23ed5f46.chunk.css",
-  "main.js": "/Mines/static/js/main.8e93252c.chunk.js",
-  "main.js.map": "/Mines/static/js/main.8e93252c.chunk.js.map",
+  "main.css": "/Mines/static/css/main.cd9a8fc3.chunk.css",
+  "main.js": "/Mines/static/js/main.60d89248.chunk.js",
+  "main.js.map": "/Mines/static/js/main.60d89248.chunk.js.map",
   "static/js/1.5d172ab8.chunk.js": "/Mines/static/js/1.5d172ab8.chunk.js",
   "static/js/1.5d172ab8.chunk.js.map": "/Mines/static/js/1.5d172ab8.chunk.js.map",
   "runtime~main.js": "/Mines/static/js/runtime~main.063d5f9a.js",
   "runtime~main.js.map": "/Mines/static/js/runtime~main.063d5f9a.js.map",
-  "static/css/main.23ed5f46.chunk.css.map": "/Mines/static/css/main.23ed5f46.chunk.css.map",
+  "static/css/main.cd9a8fc3.chunk.css.map": "/Mines/static/css/main.cd9a8fc3.chunk.css.map",
   "index.html": "/Mines/index.html",
-  "precache-manifest.872970d2605d541c61afc05a8e5997d7.js": "/Mines/precache-manifest.872970d2605d541c61afc05a8e5997d7.js",
+  "precache-manifest.faf0fb8f0f6c24dfc04e62cca0ca67cd.js": "/Mines/precache-manifest.faf0fb8f0f6c24dfc04e62cca0ca67cd.js",
   "service-worker.js": "/Mines/service-worker.js"
 }
