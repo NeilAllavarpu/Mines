@@ -3,6 +3,7 @@ import {Mine} from "./Mine.js";
 import PropTypes from "prop-types";
 import React from "react";
 import {Timer} from "./Timer.js";
+import {ScoreBoard} from "./ScoreBoard.js";
 
 const pct = 100;
 
@@ -37,6 +38,7 @@ export class Board extends React.Component {
         this.state = {
             // set mines to our (empty) 2-D array
             mines,
+            "hasFinished": false,
         };
     }
 
@@ -144,7 +146,6 @@ export class Board extends React.Component {
                     };
                 } else {
                     // get the mine associated with that coordiante
-                    console.log(mines);
                     let mine = mines[coords[1]][coords[0]];
                     // if the mine is still hidden
                     if (mine.state === MINE.HIDDEN) {
@@ -195,7 +196,6 @@ export class Board extends React.Component {
     }
 
     triggerLoss() {
-        console.log("got here")
         this.setState((prevState) => ({
             // for each square on the board
             "mines": prevState.mines.map((row) => row.map((element) => {
@@ -292,6 +292,14 @@ export class Board extends React.Component {
                     this.props.updateState({
                         "playing": GAME.WIN,
                     });
+                    let scores = localStorage.getItem("scores").split(",");
+                    scores = scores.map((score) => parseFloat(score));
+                    console.log(scores)
+                    scores.push(this.timer.getTime());
+                    scores.sort();
+                    scores.splice(10);
+                    localStorage.setItem("scores", scores);
+                    console.log(localStorage.getItem("scores").split(","))
                     this.setState({
                         // for each of the squares
                         "mines": temp.mines.map((mineRow) => mineRow.map((element) => {
@@ -302,6 +310,7 @@ export class Board extends React.Component {
                             }
                             return mine;
                         })),
+                        "hasFinished": true,
                     });
                 } else {
                     // nothing got tripped, continue play with the revealed mine(s)
@@ -451,17 +460,20 @@ export class Board extends React.Component {
                 </div>
             );
         }
+        if (this.state.hasFinished) {
+            mainContent = <ScoreBoard updateState={this.props.updateState.bind(this)} />;
+        }
         return (
             <div>
                 {/* timer to show how long the game has been */}
-                < Timer
+                {!this.firstClick && <Timer
                     // only running while game is playing
                     running={playing === GAME.IN_PROGRESS}
                     // don't show on pause screen
-                    display={playing !== GAME.PAUSE}
+                    display={playing !== GAME.PAUSE && playing !== GAME.WIN}
                     ref={(ref) => {
                         this.timer = ref;
-                    }} />
+                    }} />}
                 {mainContent}
             </div >
         );

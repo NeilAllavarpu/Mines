@@ -4,6 +4,12 @@ body {
     text-align: center;
 }
 
+ol {
+    padding-left: 47vw;
+    text-align: left;
+    list-style-position: inside;
+}
+
 .mine {
     border: .1px solid #000;
     float: left;
@@ -69,14 +75,24 @@ body {
     background-color: #800;
 }
 
-.mineLossClick, .falseMark, .mineLossAutoClick {
+.mineLossClick,
+.falseMark,
+.mineLossAutoClick {
     animation: isMineClicked 0.5s ease-in-out infinite alternate;
 }
 
 @keyframes isMineClicked {
-    0% {background-color: #00f;}
-    50% {background-color: #f00;}
-    100% {background-color: #00f;}
+    0% {
+        background-color: #00f;
+    }
+
+    50% {
+        background-color: #f00;
+    }
+
+    100% {
+        background-color: #00f;
+    }
 }
 
 .win {
@@ -85,13 +101,33 @@ body {
 }
 
 @keyframes winner {
-    0% {color: #f00}
-    17% {color: #ff0}
-    33% {color: #0f0}
-    50% {color: #0ff}
-    67% {color: #00f}
-    83% {color: #f0f}
-    100% {color: #f00}
+    0% {
+        color: #f00
+    }
+
+    17% {
+        color: #ff0
+    }
+
+    33% {
+        color: #0f0
+    }
+
+    50% {
+        color: #0ff
+    }
+
+    67% {
+        color: #00f
+    }
+
+    83% {
+        color: #f0f
+    }
+
+    100% {
+        color: #f00
+    }
 }
 
 label {

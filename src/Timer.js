@@ -58,6 +58,10 @@ export class Timer extends React.Component {
         });
     }
 
+    getTime() {
+        return this.state.timePassed / 1000;
+    }
+
     render() {
         // only show timer if that is wanted
         if (this.props.display === true) {
