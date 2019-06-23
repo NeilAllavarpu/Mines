@@ -39,6 +39,7 @@ export class Board extends React.Component {
             // set mines to our (empty) 2-D array
             mines,
             "hasFinished": false,
+            "showHelp": false,
         };
     }
 
@@ -371,7 +372,9 @@ export class Board extends React.Component {
                         this.props.updateState({
                             "playing": GAME.IN_PROGRESS,
                         });
-                        this.timer.resume();
+                        if (!this.firstClick) {
+                            this.timer.resume();
+                        }
                     }}>
                         Resume
                     </button>
@@ -457,6 +460,34 @@ export class Board extends React.Component {
                     {message}
                     {/* if the game ended, offer up a restart */}
                     {button}
+                    <br />
+                    <button
+                        onClick={() => {
+                            this.setState((prevState) => ({
+                                "showHelp": !prevState.showHelp,
+                            }));
+                        }}>
+                        Toggle Help
+                    </button>
+                    {this.state.showHelp &&
+                        <p className="help">
+                            At the start screen, enter your desired width, height, and number of mines for your game. The board cannot be wider than the screen, and the number of mines must be less than the total number of squares; play will not commence until these requirements are met. Default is a 30x15 board with 75 mines.
+                            <br />
+                            <br />
+                            Clicking on untested squares reveals them. Right-clicking on a square flags it as a mine as a `!`, but is not required.
+                            <br />
+                            <br />
+                            If a mine is revealed, the game will end immediately as a loss, all mines are revealed, and the triggered mine will flash blue and red.
+                            <br />
+                            <br />
+                            Clicking on a square with the same number of flagged squares adjacent to it as number of mines adjacent to it (ex: any square with no adjacent mines and no adjacent flagged squares, or a `2` with 2 adjacent flagged sqaures) automatically reveals all non-flagged adjacent squares. If a mine is revealed at an adjacent square (due to a misflagged square), the misflagged square flashes blue and red and the game follows the same loss conditions as above. If any of the revealed squares satisfies the same condition, that square will reveal adjacent squares by the same logic. This occurs repeatedly until no squares that are revealed that satisfy this condition.
+                            <br />
+                            <br />
+                            When all non-mine squares have been revealed, the game ends in victory.
+                            <br />
+                            <br />
+                            A timer above the board indicates how long the game has lasted; this stops immediately on victory or loss. A counter below the board indicates how many mines are left based on the number of flagged squares (number of total mines - number of flagged squares), but never dips below 0. This is simply based on flagged squares, and does not indicate whether or not those flags are correct. Below this counter is a progress bar indicating how many of the non-mine squares have been revealed.
+                    </p>}
                 </div>
             );
         }
